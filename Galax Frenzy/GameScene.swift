@@ -11,26 +11,15 @@ import GameplayKit
 import CoreGraphics
 
 class GameScene: SKScene {
-    
     let background = SKSpriteNode(imageNamed: "background")
-    let title = SKLabelNode(text: "GALAX FRENZY")
     var playableRect : CGRect
     var scoreLabel : SKLabelNode!
     var score = 0 {
         didSet{
             scoreLabel.text = "Score: \(score)"
-            
-            if score > highScore {
-                highScore = score
-            }
         }
     }
-    var highScore = 0 {
-        didSet{
-            highScoreLabel.text = "High Score: \(highScore)"
-        }
-    }
-    var isGameOver: Bool = true
+    var isGameOver: Bool = false
     var playButton = SKSpriteNode(imageNamed: "startButton")
     var highScoreLabel: SKLabelNode!
     
@@ -41,7 +30,7 @@ class GameScene: SKScene {
     var player = SKSpriteNode(imageNamed: "player_spaceship")
     var playerMovePerSec : CGFloat = 600.0
     var velocity = CGPoint.zero
-    var isPlayerDead: Bool = true
+    var isPlayerDead: Bool = false
     
     // delta time properties
     var lastUpdateTime: TimeInterval = 0
@@ -61,59 +50,33 @@ class GameScene: SKScene {
         
         // SCORE SET UP
         scoreLabel = SKLabelNode(text: "Score: 0")
-        scoreLabel.position = CGPoint(x: size.width / 2, y: size.height / 5)
-        scoreLabel.fontSize = 40
+        scoreLabel.position = CGPoint(x: 200, y: 100)
+        scoreLabel.fontSize = 70
         scoreLabel.fontName = "Helvetica"
         scoreLabel.zPosition = 0
-        
-        // MENU SET UP
-        title.position = CGPoint(x: size.width / 2, y: size.height / 2 + 350)
-        title.fontName = "Helvetica"
-        title.fontSize = 70
-        title.name = "title"
-        addChild(title)
-        
-        playButton.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        playButton.scale(to: CGSize(width: 300, height: 200))
-        playButton.name = "play"
-        addChild(playButton)
-        
-        highScoreLabel = SKLabelNode(text: "High Score: 0")
-        highScoreLabel.position = CGPoint(x: size.width / 2, y: (size.height / 2) + 200)
-        highScoreLabel.fontSize = 68
-        highScoreLabel.fontName = "Helvetica"
-        highScoreLabel.name = "highScore"
-        addChild(highScoreLabel)
+        addChild(scoreLabel)
+
         
         // PLAYER SET UP
         player.position = CGPoint(x: size.width / 2, y: 400)
+        player.scale(to: CGSize(width: 128, height: 128))
         player.zPosition = 1
         player.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-        player.physicsBody = SKPhysicsBody(circleOfRadius: 75)
+        player.physicsBody = SKPhysicsBody(circleOfRadius: 64)
         player.physicsBody?.isDynamic = false
         player.name = "player"
-
+        addChild(player)
+        
+        spawnEndlessEnemy()
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        
         // run and changes player movement
         if(!isGameOver){
             if let touch = touches.first{
                 let touchLocation = touch.location(in: self)
                 lastTouchLocation = touchLocation
                 movePlayer(location: touchLocation)
-            }
-        }
-        // play button check is clicked
-        else {
-            if let touch = touches.first{
-                let pos = touch.location(in: self)
-                let node = self.atPoint(pos)
-                
-                if node == playButton{
-                    startGame()
-                }
             }
         }
 
@@ -123,7 +86,6 @@ class GameScene: SKScene {
         guard let touch = touches.first else {
             return
         }
-        
         let touchLocation = touch.location(in: self)
         lastTouchLocation = touchLocation
         movePlayer(location: touchLocation)
@@ -232,7 +194,10 @@ class GameScene: SKScene {
             let enemy = SKSpriteNode(imageNamed: "enemy_spaceship")
             enemy.position = CGPoint(x: CGFloat.random(min: playableRect.minX, max: playableRect.maxX),
                                      y: size.height)
-            enemy.physicsBody = SKPhysicsBody(circleOfRadius: 35)
+            enemy.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+            enemy.scale(to: CGSize(width: 64, height: 64))
+            enemy.physicsBody = SKPhysicsBody(circleOfRadius: 32)
+            enemy.physicsBody?.categoryBitMask = 1
             enemy.physicsBody?.isDynamic = false
             enemy.zPosition = 0
             enemy.name = "enemy"
@@ -264,42 +229,24 @@ class GameScene: SKScene {
     }
     
     func playerDies(){
+        player.run(SKAction.playSoundFileNamed("Bomb_Explosion.mp3", waitForCompletion: false))
         self.player.removeFromParent()
-        self.scoreLabel.removeFromParent()
         isGameOver = true
-        showMenu()
+        showGameOverScreen()
         self.removeAction(forKey: "spawnEnemy")
     
     }
 
-    func showMenu(){
-        if score > highScore {
-            highScore = score
+    func showGameOverScreen(){
+        if score > Information.highScore {
+            Information.highScore = score
         }
         
-        self.addChild(title)
-        self.addChild(playButton)
-        self.addChild(highScoreLabel)
+        Information.currentScore = score
+        super.view?.presentScene(GameOverScene(size: self.size), transition: SKTransition.fade(withDuration: 1.0))
     }
     
-    func startGame(){
-        // spawn player
-        player.position = CGPoint(x: size.width / 2, y: 400)
-        isPlayerDead = false
-        self.addChild(player)
-        self.addChild(scoreLabel)
 
-        // reset game over
-        isGameOver = false
-        isPlayerDead = false
-        // reset game score
-        score = 0
-        // remove play button n high score label
-        self.title.removeFromParent()
-        self.playButton.removeFromParent()
-        self.highScoreLabel.removeFromParent()
-        
-        spawnEndlessEnemy()
-    }
+
     
 }
