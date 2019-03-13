@@ -23,6 +23,8 @@ class GameScene: SKScene {
     var playButton = SKSpriteNode(imageNamed: "startButton")
     var highScoreLabel: SKLabelNode!
     
+    let defaults = UserDefaults.standard
+    
     // texture
     var enemyTexture = SKTexture(imageNamed: "enemy_spaceship")
     
@@ -41,6 +43,7 @@ class GameScene: SKScene {
     
     // MARK: Override Functions
     override func didMove(to view: SKView) {
+        loadGame()
         // BACKGROUND SET UP
         background.position = CGPoint(x: size.width / 2,
                                       y: size.height / 2)
@@ -233,6 +236,7 @@ class GameScene: SKScene {
         self.player.removeFromParent()
         isGameOver = true
         showGameOverScreen()
+        saveGame()
         self.removeAction(forKey: "spawnEnemy")
     
     }
@@ -247,6 +251,12 @@ class GameScene: SKScene {
     }
     
 
-
+    func loadGame(){
+        Information.highScore = defaults.value(forKey: "highscore") as? Int ?? 0
+    }
+    
+    func saveGame(){
+        defaults.set(Information.highScore, forKey: "highscore")
+    }
     
 }
